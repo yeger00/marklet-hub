@@ -83,23 +83,41 @@ async function fetchDirectoryContents(url, token) {
   return await response.json();
 }
 
+async function findAndDeleteExistingFolder(searchName) {
+  return new Promise((resolve) => {
+    chrome.bookmarks.search({ title: searchName }, async (results) => {
+      for (const bookmark of results) {
+        // Only delete if it's in the bookmark bar
+        if (bookmark.parentId === '1') {
+          await chrome.bookmarks.removeTree(bookmark.id);
+        }
+      }
+      resolve();
+    });
+  });
+}
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'startSync') {
-    const { org, repo, token } = request;
+    const { org, repo, token, folderName } = request;
+    const finalFolderName = folderName || `${org}/${repo}`;
     
-    // Create main folder for repo
-    chrome.bookmarks.create({
-      parentId: '1',  // Places in Bookmarks Bar
-      title: `${org}/${repo} Bookmarklets`
-    }, async (folder) => {
-      try {
-        const apiUrl = `https://api.github.com/repos/${org}/${repo}/contents`;
-        const contents = await fetchDirectoryContents(apiUrl, token);
-        await createBookmarkHierarchy(folder.id, '', contents, token);
-        sendResponse({ message: 'Bookmarklets created successfully!' });
-      } catch (error) {
-        sendResponse({ message: `Error: ${error.message}` });
-      }
+    // First delete existing folder if it exists
+    findAndDeleteExistingFolder(finalFolderName).then(() => {
+      // Create new folder for repo
+      chrome.bookmarks.create({
+        parentId: '1',  // Places in Bookmarks Bar
+        title: finalFolderName
+      }, async (folder) => {
+        try {
+          const apiUrl = `https://api.github.com/repos/${org}/${repo}/contents`;
+          const contents = await fetchDirectoryContents(apiUrl, token);
+          await createBookmarkHierarchy(folder.id, '', contents, token);
+          sendResponse({ message: 'Bookmarklets created successfully!' });
+        } catch (error) {
+          sendResponse({ message: `Error: ${error.message}` });
+        }
+      });
     });
     
     return true;
