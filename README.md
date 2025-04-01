@@ -33,6 +33,22 @@ A Chrome extension that syncs JavaScript files from a GitHub repository into boo
 - The extension requires permission to manage your bookmarks
 - For private repositories, you'll need to provide a GitHub personal access token
 
+## Creating a GitHub Personal Access Token
+1. Go to GitHub Settings > Developer Settings > [Fine-grained tokens](https://github.com/settings/tokens?type=beta)
+2. Click "Generate new token"
+3. Set a token name (e.g., "Bookmarklet Sync") and expiration
+4. Under "Repository access":
+   - Select "Only select repositories"
+   - Choose the repository you want to sync
+5. Under "Permissions":
+   - Expand "Repository permissions"
+   - Set "Contents" to "Read-only"
+6. Click "Generate token"
+7. Copy the token immediately (you won't be able to see it again)
+8. Paste the token in the extension's "GitHub Token" field
+
+**Note**: Keep your token secure and never share it. If your token is compromised, you can revoke it in GitHub settings.
+
 ## Contributing
 Feel free to open issues or submit pull requests if you find any bugs or have suggestions for improvements.
 
