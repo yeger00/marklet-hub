@@ -97,6 +97,29 @@ async function findAndDeleteExistingFolder(searchName) {
   });
 }
 
+// Add this function to handle API requests
+async function makeGitHubRequest(url, options = {}) {
+  const headers = {
+    'Accept': 'application/vnd.github.v3+json',
+    ...options.headers
+  };
+  
+  if (localStorage.getItem('githubToken')) {
+    headers['Authorization'] = `token ${localStorage.getItem('githubToken')}`;
+  }
+
+  const response = await fetch(url, {
+    ...options,
+    headers
+  });
+
+  if (!response.ok) {
+    throw new Error(`GitHub API error: ${response.status}`);
+  }
+
+  return response.json();
+}
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'startSync') {
     const { org, repo, token, folderName } = request;

@@ -24,4 +24,20 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     );
   });
-}); 
+});
+
+// Replace any direct GitHub API calls with this pattern
+async function syncPrivateRepo() {
+  try {
+    const result = await chrome.runtime.sendMessage({
+      type: 'makeGitHubRequest',
+      url: 'https://api.github.com/repos/owner/repo/contents',
+      options: {
+        method: 'GET'
+      }
+    });
+    // Handle the result
+  } catch (error) {
+    console.error('Error syncing private repo:', error);
+  }
+} 
