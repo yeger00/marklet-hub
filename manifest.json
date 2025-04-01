@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "GitHub Bookmarklet Sync",
+  "version": "1.0",
+  "description": "Syncs GitHub repository files into browser bookmarks",
+  "permissions": [
+    "bookmarks",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://api.github.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+} 

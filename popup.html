@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>GitHub Bookmarklet Sync</title>
+  <style>
+    body {
+      width: 300px;
+      padding: 10px;
+    }
+    .form-group {
+      margin-bottom: 10px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+    }
+    input {
+      width: 100%;
+      padding: 5px;
+    }
+    button {
+      width: 100%;
+      padding: 8px;
+      background: #2ea44f;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #2c974b;
+    }
+  </style>
+</head>
+<body>
+  <div class="form-group">
+    <label for="org">GitHub Organization:</label>
+    <input type="text" id="org" />
+  </div>
+  <div class="form-group">
+    <label for="repo">Repository Name:</label>
+    <input type="text" id="repo" />
+  </div>
+  <div class="form-group">
+    <label for="token">GitHub Token:</label>
+    <input type="password" id="token" />
+  </div>
+  <button id="syncButton">Sync Bookmarks</button>
+  <div id="status"></div>
+  <script src="popup.js"></script>
+</body>
+</html> 
