@@ -1,4 +1,4 @@
-async function createBookmarkHierarchy(parentId, path, files) {
+async function createBookmarkHierarchy(parentId, path, files, token) {
   for (const file of files) {
     if (file.type === 'dir') {
       // Create folder
@@ -8,28 +8,75 @@ async function createBookmarkHierarchy(parentId, path, files) {
       });
       
       // Fetch and process contents of this directory
-      const contents = await fetchDirectoryContents(file.url);
-      await createBookmarkHierarchy(folder.id, `${path}/${file.name}`, contents);
-    } else {
-      // Create bookmark for file
-      await chrome.bookmarks.create({
-        parentId: parentId,
-        title: file.name,
-        url: file.html_url
-      });
+      const contents = await fetchDirectoryContents(file.url, token);
+      await createBookmarkHierarchy(folder.id, `${path}/${file.name}`, contents, token);
+    } else if (file.name.endsWith('.js')) {
+      // For JavaScript files, create bookmarklet
+      try {
+        const jsContent = await fetchFileContent(file.download_url, token);
+        const bookmarkletUrl = createBookmarkletUrl(jsContent);
+        await chrome.bookmarks.create({
+          parentId: parentId,
+          title: file.name.replace('.js', ''),
+          url: bookmarkletUrl
+        });
+      } catch (error) {
+        console.error(`Error creating bookmarklet for ${file.name}:`, error);
+      }
     }
   }
 }
 
-async function fetchDirectoryContents(url, token) {
-  const response = await fetch(url, {
-    headers: {
-      'Authorization': `token ${token}`,
-      'Accept': 'application/vnd.github.v3+json'
-    }
-  });
+async function fetchFileContent(url, token) {
+  const headers = {
+    'Accept': 'application/vnd.github.v3.raw'
+  };
+  
+  if (token) {
+    headers['Authorization'] = `token ${token}`;
+  }
+
+  const response = await fetch(url, { headers });
   
   if (!response.ok) {
+    throw new Error(`Failed to fetch file content: ${response.statusText}`);
+  }
+  
+  return await response.text();
+}
+
+function createBookmarkletUrl(code) {
+  // Remove comments
+  code = code.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, '');
+  
+  // Basic minification (remove unnecessary whitespace)
+  code = code.replace(/\s+/g, ' ').trim();
+  
+  // Wrap in IIFE if not already wrapped
+  if (!code.startsWith('(function')) {
+    code = `(function(){${code}})()`;
+  }
+  
+  // Create bookmarklet URL
+  return `javascript:${encodeURIComponent(code)}`;
+}
+
+async function fetchDirectoryContents(url, token) {
+  const headers = {
+    'Accept': 'application/vnd.github.v3+json'
+  };
+  
+  // Only add Authorization header if token is provided
+  if (token) {
+    headers['Authorization'] = `token ${token}`;
+  }
+
+  const response = await fetch(url, { headers });
+  
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error('Repository not found or private. Token may be required.');
+    }
     throw new Error(`GitHub API error: ${response.statusText}`);
   }
   
@@ -43,18 +90,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // Create main folder for repo
     chrome.bookmarks.create({
       parentId: '1',  // Places in Bookmarks Bar
-      title: `${org}/${repo}`
+      title: `${org}/${repo} Bookmarklets`
     }, async (folder) => {
       try {
         const apiUrl = `https://api.github.com/repos/${org}/${repo}/contents`;
         const contents = await fetchDirectoryContents(apiUrl, token);
-        await createBookmarkHierarchy(folder.id, '', contents);
-        sendResponse({ message: 'Sync completed successfully!' });
+        await createBookmarkHierarchy(folder.id, '', contents, token);
+        sendResponse({ message: 'Bookmarklets created successfully!' });
       } catch (error) {
         sendResponse({ message: `Error: ${error.message}` });
       }
     });
     
-    return true; // Indicates we'll send response asynchronously
+    return true;
   }
 }); 
